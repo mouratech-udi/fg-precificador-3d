@@ -21,6 +21,7 @@ orcamentos.json
 **/teste-*/
 *.pdf
 *.3mf
+!tests/fixtures/*.3mf
 *.gcode
 .env
 .env.*

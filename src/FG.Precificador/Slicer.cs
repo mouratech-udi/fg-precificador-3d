@@ -15,6 +15,7 @@ public static partial class Slicer
     static decimal Number(string? s) => decimal.TryParse(s, NumberStyles.Float, Inv, out var n) ? n : throw new InvalidDataException("Número ausente ou inválido no fatiamento.");
     public static string FindBambu()
     {
+        if(SlicingEngine.Available)return SlicingEngine.BundledPath;
         foreach (var root in new[] { Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Programs") })
         {
             var p = Path.Combine(root, "Bambu Studio", "bambu-studio.exe");
@@ -179,9 +180,10 @@ public static partial class Slicer
                 q.Notes = "Arquivo inteiro tratado como uma unidade de venda. Confira as mesas e ajuste as unidades apenas se este arquivo já contiver várias unidades iguais.";
                 Thumbnail(zip,q,store);
             }
-            if (!File.Exists(bambu)) throw new InvalidDataException("Bambu Studio não localizado. Em Custos, selecione o programa instalado, ou importe um .3mf já fatiado.");
-            progress?.Report("Fatiando com as configurações do arquivo…");
+            bambu=SlicingEngine.Resolve(bambu);SlicingEngine.Validate(bambu);
+            progress?.Report(SlicingEngine.IsBundled(bambu)?"Fatiando com o motor integrado…":"Fatiando com as configurações do arquivo…");
             var infoProcess = new ProcessStartInfo(bambu) { WorkingDirectory = job, UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true, RedirectStandardError = true, WindowStyle = ProcessWindowStyle.Hidden };
+            SlicingEngine.Configure(infoProcess,job);
             // no-check avoids the CLI's cloud-upload preset rewriting (notably prime volume).
             // The original project and all saved settings are independently checked below.
             foreach (var arg in new[] { "--debug", "2", "--no-check", "--slice", "0", "--outputdir", job, "--export-3mf", "analisado.3mf", input }) infoProcess.ArgumentList.Add(arg);
@@ -223,7 +225,7 @@ public static partial class Slicer
                 var expected=ConfiguredPlates(zip);
                 if(expected.Count>0&&!expected.SetEquals(q.Plates.Select(x=>x.Index)))throw new InvalidDataException("Nem todas as mesas configuradas foram analisadas. Fatie todas as mesas e importe o projeto salvo.");
             }
-            q.Method = "Fatiamento automático local · configurações conferidas";
+            q.Method = SlicingEngine.IsBundled(bambu)?$"Motor integrado BambuStudio {SlicingEngine.Version} · configurações conferidas":"Fatiamento automático local · configurações conferidas";
             return q;
         }
         finally

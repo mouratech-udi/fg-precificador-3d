@@ -11,6 +11,7 @@ public static class Program
     {
         CultureInfo.CurrentCulture=CultureInfo.GetCultureInfo("pt-BR");CultureInfo.CurrentUICulture=CultureInfo.CurrentCulture;
         if(args.Length>0&&args[0]=="--self-test")return SelfTests.Run(args.Length>1?args[1]:"autoteste.json");
+        if(args.Length>=3&&args[0]=="--self-test-engine")return EngineTests.Run(args[1],args[2]);
         if(args.Length>=3&&args[0]=="--exportar-pdf")
         {
             try

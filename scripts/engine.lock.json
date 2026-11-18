@@ -1,0 +1,11 @@
+{
+  "version": "02.08.02.60",
+  "releaseTag": "v02.08.02.60",
+  "binaryUrl": "https://github.com/bambulab/BambuStudio/releases/download/v02.08.02.60/Bambu_Studio_win-v02.08.02.60-20260814163036.zip",
+  "binarySha256": "85844d64a927ab36e3fd9bbef16da22adde1d25b3dcba4e8f58cef89db0c1291",
+  "sourceUrl": "https://github.com/bambulab/BambuStudio/archive/refs/tags/v02.08.02.60.zip",
+  "sourceSha256": "359c01490953344aa337b6e6eae5908fc23fbb7033c33538044ad9ae061efd92",
+  "runtimeUrl": "https://download.visualstudio.microsoft.com/download/pr/e9604e21-4b79-4096-a4b3-1b63d4b55b4d/CC0FF0EB1DC3F5188AE6300FAEF32BF5BEEBA4BDD6E8E445A9184072096B713B/VC_redist.x64.exe",
+  "runtimeSha256": "cc0ff0eb1dc3f5188ae6300faef32bf5beeba4bdd6e8e445a9184072096b713b",
+  "sourceDownloadName": "BambuStudio-Fonte-v02.08.02.60.zip"
+}

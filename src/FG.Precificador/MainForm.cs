@@ -138,13 +138,24 @@ public sealed partial class MainForm : Form
         {var n=Numeric();costs[x.Item1]=n;Field(fields,x.Item2,n);}
         var left=new TableLayoutPanel {Dock=DockStyle.Top,AutoSize=true,ColumnCount=1,Padding=new Padding(0,0,22,0)};left.Controls.Add(fields);
         var defaults=Button("Usar estes custos nos próximos arquivos",true);defaults.Margin=new Padding(0,15,0,15);defaults.Click+=(_,_)=>{if(Current==null)return;data.Defaults=Current.Settings.Copy();Save();status.Text="Padrões salvos. Os próximos arquivos usarão estes custos; os orçamentos anteriores mantêm seus valores.";};left.Controls.Add(defaults);
-        left.Controls.Add(TextLabel("Bambu Studio instalado",true));left.Controls.Add(bambuPath);bambuPath.Text=data.BambuPath;
-        var browse=Button("Localizar Bambu Studio…");browse.Margin=new Padding(0,10,0,10);browse.Click+=(_,_)=>BrowseBambu();left.Controls.Add(browse);
+        left.Controls.Add(TextLabel("Motor de fatiamento",true));left.Controls.Add(bambuPath);bambuPath.Text=SlicingEngine.Description(data.BambuPath);
+        var browse=Button(SlicingEngine.Available?"Motor, código e licenças":"Localizar motor externo…");browse.Margin=new Padding(0,10,0,10);
+        browse.Click+=(_,_)=>{if(SlicingEngine.Available)ShowEngineInfo();else BrowseBambu();};left.Controls.Add(browse);
         layout.Controls.Add(left,0,0);
         var notes=new FlowLayoutPanel {Dock=DockStyle.Fill,AutoSize=true,FlowDirection=FlowDirection.TopDown,WrapContents=false,Padding=new Padding(8)};
         foreach(var text in new[]{"Preço direto = custo × (1 + lucro %) + mão de obra.","O padrão é 100% de lucro sobre os custos de impressão. Os R$ 20 de mão de obra entram depois.","R$ 1,20/kWh e 120 W são estimativas iniciais para Uberlândia e A1 Combo. Ajuste com a conta de luz e uma medição na tomada.","R$ 1/h é uma reserva inicial de máquina para depreciação e manutenção. O tempo total do fatiador determina essa cobrança.","A cobrança extra por tempo começa em zero. Use-a se quiser cobrar também pela ocupação da máquina.","A taxa Shopee começa desligada em todo novo orçamento. Quando ligada: (preço direto + taxa fixa) ÷ (1 − percentual).","Cada orçamento conserva os próprios custos. O botão ao lado define o padrão dos próximos arquivos."})
         {var l=TextLabel(text);l.MaximumSize=new Size(350,0);notes.Controls.Add(l);}
         layout.Controls.Add(notes,1,0);tab.Controls.Add(layout);return tab;
+    }
+    void ShowEngineInfo()
+    {
+        try
+        {
+            using var dialog=new Form{Text="Motor integrado, código e licenças",Size=new Size(820,620),StartPosition=FormStartPosition.CenterParent,Font=Font,MinimizeBox=false,MaximizeBox=false};
+            dialog.Controls.Add(new TextBox{Dock=DockStyle.Fill,Multiline=true,ReadOnly=true,ScrollBars=ScrollBars.Vertical,BackColor=Color.White,Text=File.ReadAllText(Path.Combine(AppContext.BaseDirectory,"Engine","MOTOR-E-FONTES.md")).Replace("\r\n","\n").Replace("\n",Environment.NewLine)});
+            dialog.ShowDialog(this);
+        }
+        catch(Exception ex){MessageBox.Show(this,ex.Message,"Informações do motor");}
     }
     TabPage SourceTab()
     {

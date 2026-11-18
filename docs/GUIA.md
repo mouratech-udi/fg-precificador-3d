@@ -1,4 +1,6 @@
-# FG Precificador 3D — 1.2.0
+# FG Precificador 3D — 1.3.0
+
+Novidade 1.3.0: motor BambuStudio 02.08.02.60 integrado ao instalador e à versão portátil. O fatiamento de projetos configurados não exige instalar o Bambu Studio. O motor usa dados temporários próprios, sem conta ou plugin de rede. Mantenha a pasta Engine junto do executável. Veja também MOTOR.md para origem, fontes e licenças.
 
 Novidades 1.2.0: cadastro da empresa, logo e contatos próprios no PDF para cliente. A marca FG é mantida no programa e no relatório interno. Novas instalações começam sem produtos ou dados pessoais do autor.
 
@@ -12,20 +14,20 @@ O cabeçalho tem a identidade da FG e o Instagram **@fgdesigneprint**. A identid
 
 ## Instalar ou usar sem instalar
 
-- Instalador: abra `FG-Precificador-3D-1.2.0-x64.msi`. A instalação é por usuário; os atalhos aparecem no menu Iniciar e na área de trabalho como **FG Precificador 3D**.
+- Instalador: abra `FG-Precificador-3D-1.3.0-x64.msi`. A instalação é por usuário; os atalhos aparecem no menu Iniciar e na área de trabalho como **FG Precificador 3D**.
 - Portátil: extraia o ZIP inteiro e abra `FG.Precificador.exe`.
-- O programa inclui o runtime necessário. O Bambu Studio é um programa separado e deve estar instalado para fatiar projetos sem dados salvos.
+- O programa inclui o runtime e o motor de fatiamento necessários. O Bambu Studio não precisa estar instalado. Extraia sempre o ZIP completo.
 - Instalador e programa não possuem assinatura de editor Authenticode nesta primeira versão.
 
 ## Importar e calcular
 
 1. Clique em **Importar arquivo** ou arraste um ou mais arquivos para a janela.
 2. Selecione um `.3mf` configurado no Bambu Studio. Um `.3mf` fatiado ou `.gcode` com peso e tempo no cabeçalho também pode ser lido.
-3. Se o projeto ainda não tiver resultados completos, o programa chama o Bambu Studio instalado, em uma cópia local do arquivo. As configurações são conferidas e o original fica intacto.
+3. Se o projeto ainda não tiver resultados, o programa chama o motor integrado, em uma cópia local do arquivo. As configurações são conferidas e o original fica intacto.
 4. Revise **Orçamento**. **Arquivo e mesas** mostra o consumo de cada mesa, o perfil e a origem do resultado.
 5. Ajuste custos ou a taxa Shopee quando necessário. As alterações do orçamento são salvas automaticamente no histórico local.
 
-A importação é local: não há envio do arquivo para um servidor. O aplicativo não envia o trabalho para a impressora. Ele usa o fatiador para estimar a produção. As funções de rede próprias do Bambu Studio permanecem sob o controle desse programa.
+A importação é local: não há envio do arquivo para um servidor nem para a impressora. O motor incluído não contém o plugin opcional de rede. Ele usa uma pasta de dados separada por análise, removida ao terminar.
 
 O fatiamento automático foi conferido com Bambu Studio **02.08.02.60** e projetos da A1. Versões ou projetos diferentes podem precisar de revisão. Se houver configuração não preservada, pós-processamento externo, mesa incompleta ou formato não reconhecido, o programa pede para exportar um projeto já fatiado. Não inventa peso nem tempo.
 
@@ -106,7 +108,7 @@ A última gravação anterior fica em `orcamentos.json.bak`. Para restaurar um b
 
 ## Reprodução e verificação
 
-O código-fonte acompanha a entrega em ZIP separado. Projeto C# / .NET 10, Windows Forms x64. A exportação PDF usa PDFsharp-GDI 6.2.4, fixado no projeto e no arquivo de dependências, sob licença MIT. Requer SDK .NET 10 para recompilar. As licenças da biblioteca e do runtime acompanham a distribuição.
+O código-fonte do FG é disponibilizado no GitHub sob AGPL-3.0. O código correspondente do motor BambuStudio é disponibilizado como download separado na mesma versão, além de sua origem oficial. Projeto C# / .NET 10, Windows Forms x64. A exportação PDF usa PDFsharp-GDI 6.2.4 (MIT). Requer SDK .NET 10 para recompilar o FG e WiX 4 para preparar a distribuição com motor. As fontes e as instruções de compilação do motor estão em MOTOR.md. As licenças acompanham a distribuição.
 
 ```powershell
 dotnet build -c Release

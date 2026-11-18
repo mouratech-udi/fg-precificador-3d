@@ -2,25 +2,41 @@ param(
     [Parameter(Mandatory)][string]$Publicacao,
     [Parameter(Mandatory)][string]$Saida,
     [string]$Wix='wix',
-    [string]$Versao='1.2.0'
+    [string]$Versao='1.3.0'
 )
 $ErrorActionPreference='Stop'
 $taskPublish=(Resolve-Path -LiteralPath $Publicacao).Path
 $taskDest=[IO.Path]::GetFullPath($Saida)
-$taskIntermediate=Join-Path $PSScriptRoot 'instalador-build'
+$taskIntermediate=Join-Path (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)) 'artifacts/msi-build'
 New-Item -ItemType Directory -Path $taskIntermediate -Force | Out-Null
+$taskStaging=Join-Path $taskIntermediate 'files'
+New-Item -ItemType Directory -Path $taskStaging -Force | Out-Null
 function StableId([string]$key){
     $taskBytes=[Text.Encoding]::UTF8.GetBytes('FG.DesignPrint.Precificador/'+$key.ToLowerInvariant())
     return [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($taskBytes)).Substring(0,32)
 }
 function EscapeXml([string]$value){[Security.SecurityElement]::Escape($value)}
 $taskParts=[Collections.Generic.List[string]]::new()
-foreach($taskFile in (Get-ChildItem -LiteralPath $taskPublish -File)){
-    $taskId=StableId $taskFile.Name
-    $taskGuid=[Guid]::ParseExact($taskId,'N')
-    $taskFileId=if($taskFile.Name -eq 'FG.Precificador.exe'){'MainExe'}else{"F$taskId"}
-    $taskParts.Add(('<Component Id="C{0}" Guid="{1}"><File Id="{2}" Source="{3}" KeyPath="yes" /></Component>' -f $taskId,$taskGuid,$taskFileId,(EscapeXml $taskFile.FullName)))
+function AddPackageFolder([IO.DirectoryInfo]$folder,[string]$relative){
+    foreach($taskFile in $folder.GetFiles()){
+        $taskKey=$relative+$taskFile.Name
+        $taskId=StableId $taskKey
+        $taskGuid=[Guid]::ParseExact($taskId,'N')
+        $taskFileId=if($taskKey -eq 'FG.Precificador.exe'){'MainExe'}else{"F$taskId"}
+        # WiX 4's native cabinet writer cannot read source paths above MAX_PATH.
+        # Keep original installed names while giving the cabinet short source paths.
+        $taskShortSource=Join-Path $taskStaging $taskId
+        Copy-Item -LiteralPath $taskFile.FullName -Destination $taskShortSource -Force
+        $taskParts.Add(('<Component Id="C{0}" Guid="{1}"><File Id="{2}" Name="{4}" Source="{3}" KeyPath="yes" /></Component>' -f $taskId,$taskGuid,$taskFileId,(EscapeXml $taskShortSource),(EscapeXml $taskFile.Name)))
+    }
+    foreach($taskFolder in $folder.GetDirectories()){
+        $taskKey=$relative+$taskFolder.Name+'/'
+        $taskParts.Add(('<Directory Id="D{0}" Name="{1}">' -f (StableId $taskKey),(EscapeXml $taskFolder.Name)))
+        AddPackageFolder $taskFolder $taskKey
+        $taskParts.Add('</Directory>')
+    }
 }
+AddPackageFolder ([IO.DirectoryInfo]$taskPublish) ''
 $taskRefs=foreach($taskLine in $taskParts){if($taskLine -match '^<Component Id="([^"]+)"'){ '<ComponentRef Id="'+$Matches[1]+'"/>' }}
 $taskXml=@"
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
