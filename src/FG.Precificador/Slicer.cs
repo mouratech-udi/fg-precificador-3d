@@ -127,6 +127,12 @@ public static partial class Slicer
     }
     static void Thumbnail(ZipArchive zip, Quote q, Store store)
     {
+        foreach(var p in q.Plates)
+        {
+            var pe=zip.GetEntry($"Metadata/plate_{p.Index}.png");if(pe==null||pe.Length>5_000_000)continue;
+            var dir=Path.Combine(store.Root,"Imagens");Directory.CreateDirectory(dir);p.Thumbnail=Path.Combine(dir,q.Id.ToString("N")+"-placa-"+p.Index+".png");
+            using var a=pe.Open();using var b=File.Create(p.Thumbnail);a.CopyTo(b);
+        }
         var entry = zip.GetEntry("Metadata/plate_1.png") ?? zip.GetEntry("Metadata/thumbnail.png");
         if (entry == null || entry.Length > 5_000_000) return;
         var folder = Path.Combine(store.Root, "Imagens");Directory.CreateDirectory(folder);
@@ -222,6 +228,7 @@ public static partial class Slicer
             }
             using(var zip=ZipFile.OpenRead(input))
             {
+                Thumbnail(zip,q,store);
                 var expected=ConfiguredPlates(zip);
                 if(expected.Count>0&&!expected.SetEquals(q.Plates.Select(x=>x.Index)))throw new InvalidDataException("Nem todas as mesas configuradas foram analisadas. Fatie todas as mesas e importe o projeto salvo.");
             }

@@ -9,7 +9,7 @@ public sealed partial class MainForm : Form
 {
     readonly Store store;
     readonly AppData data;
-    readonly ListBox catalog = new() { Dock=DockStyle.Fill, BorderStyle=BorderStyle.None, IntegralHeight=false, DrawMode=DrawMode.OwnerDrawFixed, ItemHeight=88,AccessibleName="Seus orçamentos com miniaturas" };
+    readonly ListBox catalog = new() { Dock=DockStyle.Fill, BorderStyle=BorderStyle.None, IntegralHeight=false, DrawMode=DrawMode.OwnerDrawFixed, ItemHeight=88,SelectionMode=SelectionMode.MultiExtended,AccessibleName="Seus orçamentos com miniaturas" };
     readonly Dictionary<string,Image?> thumbnailCache=[];
     readonly Button editButton=Button("Editar"), deleteButton=Button("Excluir"), undoButton=Button("Desfazer exclusão");
     readonly TabControl tabs=new() {Dock=DockStyle.Fill,Padding=new Point(18,8)};
@@ -49,13 +49,13 @@ public sealed partial class MainForm : Form
         Icon=Icon.ExtractAssociatedIcon(Environment.ProcessPath!);
         AutoScaleMode=AutoScaleMode.Dpi;AllowDrop=true;
         Build();Wire();
-        foreach(var q in data.Quotes)catalog.Items.Add(q);
+        RefreshGroups();RefreshCatalog();
         if(catalog.Items.Count>0)catalog.SelectedIndex=0;else LoadCurrent();
         UpdateActions();
         cancelButton.Enabled=false;
-        Shown+=(_,_)=>{ if(Program.StartFiles.Length>0) _=Import(Program.StartFiles); };
+        Shown+=async(_,_)=>{ if(Program.StartFiles.Length>0)await Import(Program.StartFiles);if(data.CheckUpdatesOnStartup)await CheckForUpdates(false); };
         FormClosing+=(_,e)=>{if(importCancel!=null){importCancel.Cancel();e.Cancel=true;status.Text="Cancelando a análise. Feche novamente após a conclusão.";}else {saveTimer.Stop();Save();}};
-        FormClosed+=(_,_)=>{foreach(var image in thumbnailCache.Values)image?.Dispose();picture.Image?.Dispose();companyPicture.Image?.Dispose();};
+        FormClosed+=(_,_)=>{meshCancel?.Cancel();foreach(var image in thumbnailCache.Values)image?.Dispose();picture.Image?.Dispose();companyPicture.Image?.Dispose();};
     }
     static Label ValueLabel()=>new(){AutoSize=true,Font=new Font("Segoe UI Semibold",23),ForeColor=Navy,Margin=new Padding(0,8,0,0)};
     static NumericUpDown Numeric(decimal min=0,decimal max=10000000,int decimals=2,decimal value=0)=>new(){Minimum=min,Maximum=max,DecimalPlaces=decimals,Value=value,ThousandsSeparator=true,Dock=DockStyle.Fill,Increment=decimals==0?1:.1m};
@@ -99,14 +99,15 @@ public sealed partial class MainForm : Form
         var split=new SplitContainer {Size=new Size(1320,650),Dock=DockStyle.Fill,FixedPanel=FixedPanel.Panel1,SplitterWidth=10,BackColor=Canvas,SplitterDistance=340,Panel1MinSize=310,Panel2MinSize=780};
         split.Panel1.BackColor=Color.White;split.Panel1.Padding=new Padding(12);
         split.Panel1.Controls.Add(catalog);split.Panel1.Controls.Add(new Label {Text="SEUS ORÇAMENTOS",Dock=DockStyle.Top,Height=35,Font=new Font("Segoe UI Semibold",10),Padding=new Padding(4,6,0,0)});
-        var actions=new FlowLayoutPanel{Dock=DockStyle.Bottom,Height=94,Padding=new Padding(0,8,0,0),WrapContents=true};
-        actions.Controls.AddRange([editButton,deleteButton,undoButton]);split.Panel1.Controls.Add(actions);
+        BuildCatalogTools(split.Panel1);
+        var actions=new FlowLayoutPanel{Dock=DockStyle.Bottom,Height=142,Padding=new Padding(0,8,0,0),WrapContents=true};
+        actions.Controls.AddRange([openProjectButton,moveGroupButton,editButton,deleteButton,undoButton]);split.Panel1.Controls.Add(actions);
         var right=new TableLayoutPanel {Dock=DockStyle.Fill,RowCount=2,ColumnCount=1,Padding=new Padding(6,0,18,10),RowStyles={new RowStyle(SizeType.Absolute,120),new RowStyle(SizeType.Percent,100)}};
         var header=new TableLayoutPanel {Dock=DockStyle.Fill,ColumnCount=2,ColumnStyles={new ColumnStyle(SizeType.Absolute,128),new ColumnStyle(SizeType.Percent,100)},Margin=new Padding(0,0,0,12)};
         header.Controls.Add(picture,0,0);
         var labels=new FlowLayoutPanel {Dock=DockStyle.Fill,FlowDirection=FlowDirection.TopDown,WrapContents=false,Padding=new Padding(18,6,0,0)};
         labels.Controls.AddRange([title,stats,method]);header.Controls.Add(labels,1,0);right.Controls.Add(header,0,0);
-        tabs.TabPages.Add(QuoteTab());tabs.TabPages.Add(CostsTab());tabs.TabPages.Add(CompanyTab());tabs.TabPages.Add(SourceTab());right.Controls.Add(tabs,0,1);split.Panel2.Controls.Add(right);
+        tabs.TabPages.Add(QuoteTab());tabs.TabPages.Add(CostsTab());tabs.TabPages.Add(CompanyTab());tabs.TabPages.Add(SourceTab());tabs.TabPages.Add(Build3DTab());right.Controls.Add(tabs,0,1);split.Panel2.Controls.Add(right);
         Controls.Add(split);Controls.Add(toolbar);Controls.Add(top);Controls.Add(status);
     }
     TabPage QuoteTab()
@@ -134,13 +135,16 @@ public sealed partial class MainForm : Form
         var tab=new TabPage("Custos e padrões") {BackColor=Color.White,Padding=new Padding(18),AutoScroll=true};
         var layout=new TableLayoutPanel {Dock=DockStyle.Top,AutoSize=true,ColumnCount=2,ColumnStyles={new ColumnStyle(SizeType.Percent,55),new ColumnStyle(SizeType.Percent,45)}};
         var fields=FormTable();
-        foreach(var x in new[]{("kg","Filamento (R$/kg)"),("energy","Energia (R$/kWh)"),("watts","Potência média estimada (W)"),("machine","Máquina: reserva por hora (R$)"),("time","Tempo: cobrança extra por hora (R$)"),("labor","Mão de obra por unidade (R$)"),("markup","Lucro sobre custo de impressão (%)")})
+        foreach(var x in new[]{("kg","Filamento (R$/kg)"),("energy","Energia (R$/kWh)"),("watts","Potência média estimada (W)"),("machine","Máquina: reserva por hora (R$)"),("time","Tempo: cobrança extra por hora (R$)"),("labor","Mão de obra (R$)"),("markup","Lucro sobre custo de impressão (%)")})
         {var n=Numeric();costs[x.Item1]=n;Field(fields,x.Item2,n);}
+        laborBasis.Items.AddRange(Enum.GetValues<LaborBasis>().Select(x=>(object)Pricing.LaborLabel(x)).ToArray());Field(fields,"Cobrar mão de obra",laborBasis);laborBasis.SelectedIndexChanged+=(_,_)=>Edited();
         var left=new TableLayoutPanel {Dock=DockStyle.Top,AutoSize=true,ColumnCount=1,Padding=new Padding(0,0,22,0)};left.Controls.Add(fields);
         var defaults=Button("Usar estes custos nos próximos arquivos",true);defaults.Margin=new Padding(0,15,0,15);defaults.Click+=(_,_)=>{if(Current==null)return;data.Defaults=Current.Settings.Copy();Save();status.Text="Padrões salvos. Os próximos arquivos usarão estes custos; os orçamentos anteriores mantêm seus valores.";};left.Controls.Add(defaults);
         left.Controls.Add(TextLabel("Motor de fatiamento",true));left.Controls.Add(bambuPath);bambuPath.Text=SlicingEngine.Description(data.BambuPath);
         var browse=Button(SlicingEngine.Available?"Motor, código e licenças":"Localizar motor externo…");browse.Margin=new Padding(0,10,0,10);
         browse.Click+=(_,_)=>{if(SlicingEngine.Available)ShowEngineInfo();else BrowseBambu();};left.Controls.Add(browse);
+        var updates=Button("Verificar atualizações");updates.Margin=new Padding(0,8,0,8);updates.Click+=async(_,_)=>await CheckForUpdates(true);left.Controls.Add(updates);
+        autoUpdate.Text="Avisar sobre atualizações ao abrir";autoUpdate.AutoSize=true;autoUpdate.Checked=data.CheckUpdatesOnStartup;autoUpdate.CheckedChanged+=(_,_)=>{data.CheckUpdatesOnStartup=autoUpdate.Checked;Save();};left.Controls.Add(autoUpdate);
         layout.Controls.Add(left,0,0);
         var notes=new FlowLayoutPanel {Dock=DockStyle.Fill,AutoSize=true,FlowDirection=FlowDirection.TopDown,WrapContents=false,Padding=new Padding(8)};
         foreach(var text in new[]{"Preço direto = custo × (1 + lucro %) + mão de obra.","O padrão é 100% de lucro sobre os custos de impressão. Os R$ 20 de mão de obra entram depois.","R$ 1,20/kWh e 120 W são estimativas iniciais para Uberlândia e A1 Combo. Ajuste com a conta de luz e uma medição na tomada.","R$ 1/h é uma reserva inicial de máquina para depreciação e manutenção. O tempo total do fatiador determina essa cobrança.","A cobrança extra por tempo começa em zero. Use-a se quiser cobrar também pela ocupação da máquina.","A taxa Shopee começa desligada em todo novo orçamento. Quando ligada: (preço direto + taxa fixa) ÷ (1 − percentual).","Cada orçamento conserva os próprios custos. O botão ao lado define o padrão dos próximos arquivos."})
@@ -159,9 +163,12 @@ public sealed partial class MainForm : Form
     }
     TabPage SourceTab()
     {
-        var tab=new TabPage("Arquivo e mesas") {BackColor=Color.White,Padding=new Padding(16)};
+        var tab=new TabPage("Placas e custos") {BackColor=Color.White,Padding=new Padding(16)};
         var body=new TableLayoutPanel {Dock=DockStyle.Fill,RowCount=2,ColumnCount=1,RowStyles={new RowStyle(SizeType.Percent,45),new RowStyle(SizeType.Percent,55)}};
-        plates.Columns.Add("index","Mesa");plates.Columns.Add("grams","Filamento (g)");plates.Columns.Add("time","Tempo total");plates.Columns.Add("objects","Objetos");body.Controls.Add(plates,0,0);body.Controls.Add(details,0,1);tab.Controls.Add(body);return tab;
+        plates.AutoSizeColumnsMode=DataGridViewAutoSizeColumnsMode.AllCells;plates.RowTemplate.Height=72;plates.ColumnHeadersHeight=48;
+        plates.Columns.Add(new DataGridViewImageColumn{Name="preview",HeaderText="Placa",ImageLayout=DataGridViewImageCellLayout.Zoom,Width=82,AutoSizeMode=DataGridViewAutoSizeColumnMode.None,DefaultCellStyle=new DataGridViewCellStyle{NullValue=null}});
+        foreach(var c in new[]{("index","Nº"),("grams","Filamento (g)"),("time","Tempo"),("material","Material R$"),("energy","Energia R$"),("machine","Máquina R$"),("extraTime","Tempo extra R$"),("other","Outros R$"),("cost","Custo R$"),("labor","Mão de obra R$"),("minimum","Mínimo rateado R$")})plates.Columns.Add(c.Item1,c.Item2);
+        body.RowStyles[0].Height=60;body.RowStyles[1].Height=40;body.Controls.Add(plates,0,0);body.Controls.Add(details,0,1);tab.Controls.Add(body);return tab;
     }
     void Wire()
     {
@@ -182,16 +189,17 @@ public sealed partial class MainForm : Form
         catalog.SelectedIndexChanged+=(_,_)=>LoadCurrent();
         var menu=new ContextMenuStrip();
         menu.Items.Add("Editar orçamento",null,(_,_)=>EditCurrent());
+        menu.Items.Add("Abrir projeto",null,(_,_)=>OpenProject());menu.Items.Add("Mover selecionados para grupo…",null,(_,_)=>MoveToGroup());
         menu.Items.Add("Excluir orçamento…",null,(_,_)=>DeleteCurrent());
         menu.Opening+=(_,e)=>{if(Current==null||importCancel!=null)e.Cancel=true;};
         catalog.ContextMenuStrip=menu;
-        catalog.MouseDown+=(_,e)=>{if(e.Button==MouseButtons.Right)catalog.SelectedIndex=catalog.IndexFromPoint(e.Location);};
+        catalog.MouseDown+=(_,e)=>{if(e.Button==MouseButtons.Right){var i=catalog.IndexFromPoint(e.Location);if(i>=0&&!catalog.GetSelected(i)){catalog.ClearSelected();catalog.SetSelected(i,true);}}};
         catalog.KeyDown+=(_,e)=>{if(e.KeyCode==Keys.F2){EditCurrent();e.Handled=true;}else if(e.KeyCode==Keys.Delete){DeleteCurrent();e.Handled=true;}};
         catalog.DoubleClick+=(_,_)=>EditCurrent();
         editButton.Click+=(_,_)=>EditCurrent();deleteButton.Click+=(_,_)=>DeleteCurrent();undoButton.Click+=(_,_)=>UndoDelete();
         importButton.Click+=async(_,_)=>{using var d=new OpenFileDialog{Filter="Projetos e fatiamentos|*.3mf;*.gcode|Projeto 3MF|*.3mf|G-code|*.gcode",Multiselect=true,Title="Importar para precificar"};if(d.ShowDialog(this)==DialogResult.OK)await Import(d.FileNames);};
         cancelButton.Click+=(_,_)=>importCancel?.Cancel();
-        manualButton.Click+=(_,_)=>{var q=new Quote {Manual=true,Settings=data.Defaults.Copy(),Plates=[new Plate{Index=1}]};data.Quotes.Insert(0,q);catalog.Items.Insert(0,q);catalog.SelectedIndex=0;Save();};
+        manualButton.Click+=(_,_)=>{var q=new Quote {Manual=true,Settings=data.Defaults.Copy(),Plates=[new Plate{Index=1}]};data.Quotes.Insert(0,q);searchBox.Clear();groupFilter.SelectedIndex=0;RefreshCatalog(q.Id);Save();};
         foreach(var n in new[]{units,quantity,extra,other,grams,minutes,percent,fixedFee}.Concat(costs.Values))n.ValueChanged+=(_,_)=>Edited();
         name.TextChanged+=(_,_)=>Edited();shopee.CheckedChanged+=(_,_)=>Edited();
         saveTimer.Tick+=(_,_)=>{saveTimer.Stop();Save();};
@@ -204,6 +212,7 @@ public sealed partial class MainForm : Form
         UpdateActions();
         if(Current is not{}q)
         {
+            meshCancel?.Cancel();meshQuote=null;viewer.SetMesh(null,"Selecione um projeto para visualizar em 3D.");platePicker.Items.Clear();meshInfo.Text="";
             loading=true;
             try{name.Text="";title.Text="Selecione ou importe um projeto";stats.Text="";method.Text="";costValue.Text=priceValue.Text=orderValue.Text="—";minimum.Text="Escolha um orçamento na lista.";breakdown.Rows.Clear();plates.Rows.Clear();details.Clear();picture.Image?.Dispose();picture.Image=null;}
             finally{loading=false;}
@@ -212,13 +221,13 @@ public sealed partial class MainForm : Form
         loading=true;
         try
         {
-            name.Text=q.Name;Set(units,q.UnitsInFile);Set(quantity,q.OrderQuantity);Set(extra,q.ExtraGrams);Set(other,q.OtherPerUnit);Set(grams,q.Grams);Set(minutes,q.Seconds/60);
+            name.Text=q.Name;Set(units,q.UnitsInFile);Set(quantity,q.OrderQuantity);Set(extra,q.ExtraGrams);Set(other,q.OtherPerUnit);Set(grams,q.Grams);Set(minutes,q.Seconds/60);laborBasis.SelectedIndex=(int)q.Settings.LaborBasis;
             grams.ReadOnly=minutes.ReadOnly=!q.Manual;grams.Enabled=minutes.Enabled=q.Manual;
             shopee.Checked=q.Shopee;Set(percent,q.ShopeePercent);Set(fixedFee,q.ShopeeFixed);
             var s=q.Settings;Set(costs["kg"],s.FilamentPerKg);Set(costs["energy"],s.EnergyPerKwh);Set(costs["watts"],s.Watts);Set(costs["machine"],s.MachinePerHour);Set(costs["time"],s.TimePerHour);Set(costs["labor"],s.Labor);Set(costs["markup"],s.MarkupPercent);
             picture.Image?.Dispose();picture.Image=null;
             try{var path=q.Thumbnail;if(File.Exists(path)){using var im=Image.FromFile(path);picture.Image=new Bitmap(im);}}catch{}
-            plates.Rows.Clear();foreach(var p in q.Plates)plates.Rows.Add(p.Index,p.Grams.ToString("N2"),Pricing.Duration(p.Seconds),p.Objects==0?"—":p.Objects);
+            RefreshPlatePicker(q);
             details.Text=$"{q.Method}\r\n\r\nArquivo: {q.Source}\r\nPerfil: {q.Profile}\r\nSHA-256: {q.Sha256}\r\nImportado: {q.Created:dd/MM/yyyy HH:mm}\r\n\r\n{q.Notes}\r\n{string.Join("\r\n",q.Plates.Where(x=>!string.IsNullOrWhiteSpace(x.Warning)).Select(x=>$"Mesa {x.Index}: {x.Warning}"))}\r\n\r\nO tempo e o consumo são estimativas do fatiador. Purga inicial/calibração e falhas podem exigir filamento extra. Outros custos por unidade podem incluir embalagem, acessórios e frete.\r\n\r\nPesquisa inicial: 17/11/2026. Cemig B1 convencional: R$ 0,90329/kWh antes dos impostos, com bandeira verde. R$ 1,20/kWh e 120 W são hipóteses de orçamento, não medições da conta ou máquina. Reserva da máquina: R$ 1/h estimado.\r\nhttps://www.cemig.com.br/valores-e-tarifas/tarifas-vigentes/\r\nhttps://forum.bambulab.com/t/power-consumption-for-a1-printer/92095/14\r\n\r\nAs taxas Shopee são parâmetros fornecidos pelo usuário, não uma tabela oficial atualizada.\r\n\r\nDados locais: {store.DataPath}";
         }finally{loading=false;}RefreshPrice();
     }
@@ -228,7 +237,7 @@ public sealed partial class MainForm : Form
         q.Name=string.IsNullOrWhiteSpace(name.Text)?"Sem nome":name.Text.Trim();q.UnitsInFile=(int)units.Value;q.OrderQuantity=(int)quantity.Value;q.ExtraGrams=extra.Value;q.OtherPerUnit=other.Value;
         q.Shopee=shopee.Checked;q.ShopeePercent=percent.Value;q.ShopeeFixed=fixedFee.Value;
         if(q.Manual)q.Plates=[new Plate{Index=1,Grams=grams.Value,Seconds=minutes.Value*60}];
-        var s=q.Settings;s.FilamentPerKg=costs["kg"].Value;s.EnergyPerKwh=costs["energy"].Value;s.Watts=costs["watts"].Value;s.MachinePerHour=costs["machine"].Value;s.TimePerHour=costs["time"].Value;s.Labor=costs["labor"].Value;s.MarkupPercent=costs["markup"].Value;
+        var s=q.Settings;s.FilamentPerKg=costs["kg"].Value;s.EnergyPerKwh=costs["energy"].Value;s.Watts=costs["watts"].Value;s.MachinePerHour=costs["machine"].Value;s.TimePerHour=costs["time"].Value;s.Labor=costs["labor"].Value;s.MarkupPercent=costs["markup"].Value;if(laborBasis.SelectedIndex>=0)s.LaborBasis=(LaborBasis)laborBasis.SelectedIndex;
         RefreshPrice();catalog.Invalidate();saveTimer.Stop();saveTimer.Start();
     }
     void RefreshPrice()
@@ -240,11 +249,11 @@ public sealed partial class MainForm : Form
             var r=Pricing.Calculate(q);costValue.Text=Pricing.Money(r.PrintCost);priceValue.Text=Pricing.Money(r.Suggested);orderValue.Text=Pricing.Money(r.OrderTotal);
             minimum.Text=$"Mínimo por unidade: {Pricing.Money(r.Minimum)}  ·  Sugestão arredondada para cima  ·  Pedido: {q.OrderQuantity} unidade(s)";
             void Row(string text,decimal v)=>breakdown.Rows.Add(text,Pricing.Money(v));
-            Row("Filamento",r.Material);Row("Energia estimada",r.Energy);Row("Reserva da máquina",r.Machine);Row("Tempo adicional",r.Time);Row("Outros custos",r.Other);Row("Custo de impressão",r.PrintCost);Row("Lucro após taxas e mão de obra*",r.Profit);Row("Mão de obra",q.Settings.Labor);Row("Taxa Shopee*",r.Fee);Row("Preço mínimo",r.Minimum);
+            Row("Filamento",r.Material);Row("Energia estimada",r.Energy);Row("Reserva da máquina",r.Machine);Row("Tempo adicional",r.Time);Row("Outros custos",r.Other);Row("Custo de impressão",r.PrintCost);Row("Lucro após taxas e mão de obra*",r.Profit);Row("Mão de obra",r.Labor);Row("Taxa Shopee*",r.Fee);Row("Preço mínimo",r.Minimum);RefreshPlatePrices(q);
             breakdown.Rows[^1].DefaultCellStyle.Font=new Font("Segoe UI Semibold",10);
             breakdown.AccessibleDescription="Composição no preço mínimo. A sugestão arredondada pode gerar lucro maior.";
         }
-        catch(InvalidDataException ex){costValue.Text=priceValue.Text=orderValue.Text="—";minimum.Text=ex.Message;}
+        catch(InvalidDataException ex){plates.Rows.Clear();costValue.Text=priceValue.Text=orderValue.Text="—";minimum.Text=ex.Message;}
     }
     async Task Import(IEnumerable<string> paths)
     {
@@ -259,7 +268,7 @@ public sealed partial class MainForm : Form
                     var progress=new Progress<string>(s=>status.Text=Path.GetFileName(file)+": "+s);
                     var token=importCancel.Token;
                     var q=await Task.Run(()=>Slicer.ImportAsync(file,data.BambuPath,store,progress,token),token);
-                    q.Settings=data.Defaults.Copy();data.Quotes.Insert(0,q);catalog.Items.Insert(0,q);catalog.SelectedIndex=0;Save();success++;
+                    q.Settings=data.Defaults.Copy();data.Quotes.Insert(0,q);searchBox.Clear();groupFilter.SelectedIndex=0;RefreshCatalog(q.Id);Save();success++;
                 }
                 catch(OperationCanceledException){status.Text="Análise cancelada. Os arquivos originais foram preservados.";return;}
                 catch(Exception ex){errors.Add(Path.GetFileName(file)+": "+ex.Message);}
@@ -312,7 +321,7 @@ public sealed partial class MainForm : Form
         thumbnailCache[q.Thumbnail]=result;return result;
     }
     void UpdateActions()
-    {editButton.Enabled=deleteButton.Enabled=Current!=null&&importCancel==null;undoButton.Enabled=data.DeletedQuotes.Count>0&&importCancel==null;}
+    {editButton.Enabled=openProjectButton.Enabled=deleteButton.Enabled=Current!=null&&catalog.SelectedItems.Count==1&&importCancel==null;moveGroupButton.Enabled=Current!=null&&importCancel==null;undoButton.Enabled=data.DeletedQuotes.Count>0&&importCancel==null;resliceButton.Enabled=Current!=null&&importCancel==null;}
     void EditCurrent()
     {
         if(Current==null||importCancel!=null)return;

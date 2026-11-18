@@ -12,6 +12,11 @@ public static class Program
         CultureInfo.CurrentCulture=CultureInfo.GetCultureInfo("pt-BR");CultureInfo.CurrentUICulture=CultureInfo.CurrentCulture;
         if(args.Length>0&&args[0]=="--self-test")return SelfTests.Run(args.Length>1?args[1]:"autoteste.json");
         if(args.Length>=3&&args[0]=="--self-test-engine")return EngineTests.Run(args[1],args[2]);
+        if(args.Length>=3&&args[0]=="--verificar-3d")
+        {
+            try{var mesh=Project3D.Load(args[1],args.Length>3?int.Parse(args[3]):null);var size=mesh.Max-mesh.Min;File.WriteAllText(args[2],JsonSerializer.Serialize(new{success=true,faces=mesh.Faces.Count,width=size.X,depth=size.Y,height=size.Z,simplified=mesh.Simplified},Store.Json));return 0;}
+            catch(Exception ex){File.WriteAllText(args[2],JsonSerializer.Serialize(new{success=false,error=ex.ToString()},Store.Json));return 1;}
+        }
         if(args.Length>=3&&args[0]=="--exportar-pdf")
         {
             try

@@ -85,6 +85,7 @@ public static class SelfTests
             var unsafeArchive=Path.Combine(folder,"pos-processamento.3mf");
             using(var z=ZipFile.Open(unsafeArchive,ZipArchiveMode.Create)){using var w=new StreamWriter(z.CreateEntry("Metadata/project_settings.config").Open());w.Write("{\"post_process\":[\"some-external-script\"]}");}
             rejected=false;try{Slicer.ImportAsync(unsafeArchive,"",store).GetAwaiter().GetResult();}catch(InvalidDataException){rejected=true;}Check(rejected,"Projeto com programa externo não é executado");
+            FeatureTests.Run(Check,folder);
             File.WriteAllText(output,JsonSerializer.Serialize(new{success=true,checks},Store.Json));return 0;
         }
         catch(Exception ex){File.WriteAllText(output,JsonSerializer.Serialize(new{success=false,checks,error=ex.ToString()},Store.Json));return 1;}

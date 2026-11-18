@@ -19,7 +19,16 @@ public static class PdfReports
         if(internalDetails)
         {
             report.Section("Composição por unidade");
-            foreach(var row in new[]{("Filamento",price.Material),("Energia estimada",price.Energy),("Reserva da máquina",price.Machine),("Tempo adicional",price.Time),("Outros custos",price.Other),("Custo de impressão",price.PrintCost),("Mão de obra",quote.Settings.Labor),("Taxa Shopee no preço mínimo",price.Fee),("Lucro no preço mínimo, após taxas e mão de obra",price.Profit),("Preço mínimo",price.Minimum)})report.Row(row.Item1,Pricing.Money(row.Item2),true);
+            foreach(var row in new[]{("Filamento",price.Material),("Energia estimada",price.Energy),("Reserva da máquina",price.Machine),("Tempo adicional",price.Time),("Outros custos",price.Other),("Custo de impressão",price.PrintCost),("Mão de obra",price.Labor),("Taxa Shopee no preço mínimo",price.Fee),("Lucro no preço mínimo, após taxas e mão de obra",price.Profit),("Preço mínimo",price.Minimum)})report.Row(row.Item1,Pricing.Money(row.Item2),true);
+            report.Section("Placas do arquivo inteiro");
+            report.Paragraph("Mão de obra: "+Pricing.LaborLabel(quote.Settings.LaborBasis)+". O preço mínimo por placa é um rateio do total do arquivo, não um preço independente de venda. Mão de obra por projeto é rateada pelo tempo; filamento extra e outros custos, pelo material.",9);
+            foreach(var p in Pricing.ByPlate(quote))
+            {
+                report.Section("Placa "+p.Plate.Index);report.PlatePreview(p.Plate.Thumbnail);
+                report.Paragraph($"{p.Plate.Grams:N2} g | {Pricing.Duration(p.Plate.Seconds)}. Material: {Pricing.Money(p.Material)}; energia: {Pricing.Money(p.Energy)}; máquina: {Pricing.Money(p.Machine)}; tempo extra: {Pricing.Money(p.Time)}; outros: {Pricing.Money(p.Other)}.",9);
+                report.Row("Custo de impressão",Pricing.Money(p.Cost),true);report.Row("Mão de obra",Pricing.Money(p.Labor),true);report.Row("Mínimo rateado",Pricing.Money(p.Minimum),true);
+            }
+            report.Row("Mínimo do arquivo inteiro",Pricing.Money(price.Minimum*quote.UnitsInFile));
             report.Section("Dados e parâmetros utilizados");
             var s=quote.Settings;
             report.Paragraph($"Arquivo: {quote.Grams:N2} g de filamento | {Pricing.Duration(quote.Seconds)} | {quote.Plates.Count} mesa(s) | {quote.UnitsInFile} unidade(s) de venda contida(s).",9);
@@ -134,6 +143,11 @@ public static class PdfReports
         {
             foreach(var item in Wrap(text,Width,size)){Ensure(size*1.5+4);Text(item,Left,y,Width,size*1.6,size,false,muted);y+=size*1.5;}
             y+=9;
+        }
+        public void PlatePreview(string path)
+        {
+            if(!File.Exists(path))return;
+            try{using var image=XImage.FromFile(path);Ensure(92);FitImage(image,Left,y,120,84);y+=92;}catch{ }
         }
         public void Section(string text)
         {Ensure(65);y+=18;Text(text,Left,y,Width,24,12,true);y+=31;}

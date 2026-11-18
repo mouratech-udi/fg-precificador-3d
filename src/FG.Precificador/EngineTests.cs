@@ -22,6 +22,11 @@ public static class EngineTests
             Check(Math.Abs(q.Seconds-977.7164306640625m)<.1m,"Tempo de referência do cubo preservado");
             Check(before.SequenceEqual(SHA256.HashData(File.ReadAllBytes(fixture))),"Projeto de origem intacto");
             Check(!Directory.EnumerateDirectories(Path.Combine(store.Root,"Trabalhos")).Any(),"Arquivos temporários do motor removidos após a análise");
+            var mesh=Project3D.Load(fixture,1);Check(mesh.Faces.Count==12,"Visualização lê os doze triângulos do cubo na placa correta");
+            var adjusted=Path.Combine(store.Root,"cubo-ajustado.3mf");PrintAdjustments.CreateCopy(fixture,adjusted,new Dictionary<string,string>{{"layer_height","0.12"},{"sparse_infill_density","30%"},{"wall_loops","2"}});
+            var q2=Slicer.ImportAsync(adjusted,@"Z:\motor-ausente.exe",store).GetAwaiter().GetResult();
+            Check(q2.Grams!=q.Grams&&q2.Seconds!=q.Seconds&&q2.Method.StartsWith("Motor integrado"),"Ajustes são refatiados pelo motor e mudam consumo e tempo");
+            Check(before.SequenceEqual(SHA256.HashData(File.ReadAllBytes(fixture))),"Refatiamento ajustado conserva o original");
             var externalInstalled=File.Exists(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),"Bambu Studio","bambu-studio.exe"));
             if(Environment.GetEnvironmentVariable("FG_REQUIRE_NO_BAMBU")=="1")Check(!externalInstalled,"Teste executado sem Bambu Studio instalado");
             File.WriteAllText(output,JsonSerializer.Serialize(new{success=true,checks,engineVersion=SlicingEngine.Version,externalStudioInstalled=externalInstalled,grams=q.Grams,seconds=q.Seconds},Store.Json));return 0;

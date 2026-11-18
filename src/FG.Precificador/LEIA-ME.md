@@ -1,6 +1,8 @@
-# FG Precificador 3D — 1.3.0
+# FG Precificador 3D — 1.4.0
 
-Novidade 1.3.0: motor BambuStudio 02.08.02.60 integrado ao instalador e à versão portátil. O fatiamento de projetos configurados não exige instalar o Bambu Studio. O motor usa dados temporários próprios, sem conta ou plugin de rede. Mantenha a pasta Engine junto do executável. Veja também MOTOR.md para origem, fontes e licenças.
+Novidade 1.4.0: visualização 3D, ajustes com refatiamento em cópia, placas com custos, mão de obra por projeto ou placa, pesquisa e grupos/subgrupos, abertura de projeto e aviso opcional de atualizações.
+
+Novidade 1.3.0: motor BambuStudio 02.08.02.60 integrado ao instalador e à versão portátil. O fatiamento de projetos configurados não exige instalar o Bambu Studio. O motor usa dados temporários próprios, sem conta ou plugin de rede. Mantenha a pasta Engine junto do executável. Veja também Engine/MOTOR-E-FONTES.md para origem, fontes e licenças.
 
 Novidades 1.2.0: cadastro da empresa, logo e contatos próprios no PDF para cliente. A marca FG é mantida no programa e no relatório interno. Novas instalações começam sem produtos ou dados pessoais do autor.
 
@@ -14,7 +16,7 @@ O cabeçalho tem a identidade da FG e o Instagram **@fgdesigneprint**. A identid
 
 ## Instalar ou usar sem instalar
 
-- Instalador: abra `FG-Precificador-3D-1.3.0-x64.msi`. A instalação é por usuário; os atalhos aparecem no menu Iniciar e na área de trabalho como **FG Precificador 3D**.
+- Instalador: abra `FG-Precificador-3D-1.4.0-x64.msi`. A instalação é por usuário; os atalhos aparecem no menu Iniciar e na área de trabalho como **FG Precificador 3D**.
 - Portátil: extraia o ZIP inteiro e abra `FG.Precificador.exe`.
 - O programa inclui o runtime e o motor de fatiamento necessários. O Bambu Studio não precisa estar instalado. Extraia sempre o ZIP completo.
 - Instalador e programa não possuem assinatura de editor Authenticode nesta primeira versão.
@@ -39,6 +41,30 @@ STL e OBJ precisam primeiro ser configurados no Bambu Studio e salvos como proje
 
 **Quantidade do pedido** multiplica o preço de venda. Ela **não divide o consumo** e não simula automaticamente uma nova disposição em lote. Para obter economia real de um lote, configure esse lote no Bambu Studio e importe o arquivo correspondente. Em arquivos com produtos diferentes, não divida o consumo igualmente entre eles; importe cada produto separadamente ou trate o conjunto como kit.
 
+## Abrir, pesquisar e organizar
+
+Use **Abrir projeto** no orçamento selecionado para acessar a aba Projeto 3D. **Abrir no aplicativo associado** abre o original no programa configurado no Windows. Se o original não for encontrado, localize-o novamente: a importação cria outro orçamento, sem associar dados antigos a um arquivo diferente.
+
+O campo **Pesquisar modelo** filtra nomes, ignorando maiúsculas e acentos. O filtro de grupos inclui seus subgrupos. **Novo grupo** cria no nível principal; selecione um grupo e use **Subgrupo** para criar dentro dele. Selecione vários orçamentos com Ctrl ou Shift e use **Mover para grupo**. **Sem grupo** remove a associação. O orçamento mantém a mesma identificação e os próprios custos.
+
+## Placas e custos
+
+A aba **Placas e custos** mostra miniaturas disponíveis no projeto, peso, tempo, material, energia, máquina, tempo extra, outros custos, mão de obra e mínimo rateado por placa. Role horizontalmente para ver todas as colunas.
+
+Os valores são do arquivo inteiro. O mínimo rateado soma o mínimo por unidade multiplicado pelas unidades presentes no arquivo; não representa venda independente de cada placa. Mão de obra por projeto é rateada pelo tempo. Filamento extra e outros custos são rateados pelo material; a mão de obra por placa aplica o valor configurado a cada placa. O arredondamento final do rateio mantém a soma exata. O PDF interno inclui esse detalhamento.
+
+## Projeto 3D e ajustes de impressão
+
+Na aba **Projeto 3D**, escolha todas as placas ou uma placa específica. Se o arquivo tiver sido alterado desde a criação do orçamento, importe-o novamente para conferir a geometria e os custos juntos. Arraste para girar, use o botão direito para mover e a roda para ampliar. **Centralizar** restaura a vista. Cores são ilustrativas por objeto, não reproduzem a pintura do fatiador. Malhas grandes têm exibição simplificada; o fatiamento continua com a geometria completa.
+
+**Ajustar e refatiar** permite marcar os parâmetros que deseja alterar: camada, preenchimento, paredes, suporte (mantendo o tipo configurado), tipo e largura do brim. Os valores marcados se aplicam a todas as placas e às sobreposições de objetos. Os demais parâmetros e as cores são mantidos. Escolha outro nome para salvar: o original não pode ser sobrescrito. O motor refaz o fatiamento e cria um novo orçamento com os custos e a organização do anterior.
+
+Camada acima de 80% do menor bico é rejeitada. Projetos com perfil de camadas adaptativas devem ter esse perfil removido em um fatiador compatível antes de alterar a camada aqui. A versão não altera orientação, pintura, disposição ou suportes manualmente, nem prepara STL/OBJ sem configuração. Conferência digital não substitui uma impressão de teste.
+
+## Avisos de atualização
+
+Em **Custos e padrões**, use **Verificar atualizações**. Marque **Avisar sobre atualizações ao abrir** se desejar uma consulta automática ao iniciar (começa desligada). A consulta acessa somente a versão pública mais recente no GitHub; arquivos e orçamentos não são enviados. Quando existir versão mais nova, o programa oferece abrir a página oficial de download. Não baixa nem executa instaladores automaticamente. Sem internet, o uso local continua disponível.
+
 ## Custos combinados
 
 - Filamento: R$ 100,00/kg.
@@ -46,10 +72,10 @@ STL e OBJ precisam primeiro ser configurados no Bambu Studio e salvos como proje
 - Reserva para depreciação/manutenção da máquina: R$ 1,00/h.
 - Cobrança extra pelo tempo: R$ 0,00/h inicialmente, em campo separado.
 - Lucro: 100% sobre os custos de impressão.
-- Mão de obra: R$ 20,00 por unidade vendida, adicionados **depois** do lucro.
+- Mão de obra: R$ 20,00 pelo projeto inteiro (padrão dos novos), adicionados **depois** do lucro. Em Custos e padrões, pode escolher por placa. Orçamentos antigos mantêm por unidade para preservar os preços.
 - Shopee: desligada em cada novo orçamento. Quando solicitada, o padrão é 20% do preço final mais uma taxa fixa ajustável entre R$ 2,00 e R$ 5,50 por unidade.
 
-**Preço direto = custo de impressão × 2 + R$ 20.**
+**Preço direto por unidade = custo de impressão por unidade × 2 + mão de obra calculada por unidade.** Na modalidade por projeto, divide os R$ 20 pelas unidades contidas no arquivo; por placa, multiplica pelo número de placas e divide pelas unidades.
 
 **Preço Shopee = (preço direto + taxa fixa) ÷ (1 − percentual).**
 

@@ -12,6 +12,11 @@ Programa para Windows que fatia projetos 3MF configurados e calcula custos e pre
 - Motor integrado BambuStudio 02.08.02.60, com conferência dos parâmetros originais, sem modificar o arquivo de origem ou enviar o trabalho para a impressora.
 - Cálculo de material, energia, reserva da máquina, tempo adicional, mão de obra, lucro e taxa opcional da Shopee.
 - Histórico local com miniaturas, edição, exclusão e recuperação da última exclusão.
+- Pesquisa por nome sem distinguir acentos, grupos/subgrupos e movimentação de vários orçamentos com Ctrl/Shift.
+- Placas com miniaturas e composição de custos. Mão de obra por projeto (padrão) ou por placa, com rateio que fecha o total.
+- Visualização 3D local, com seleção de placa, rotação, movimento e zoom. Botão para abrir o projeto e opção de abrir no aplicativo associado.
+- Ajustes de camada, preenchimento, paredes, suporte e brim, salvos em outra cópia e refatiados pelo motor integrado.
+- Verificação de novas versões e aviso opcional ao iniciar, com acesso à página oficial de download.
 - PDF para cliente com **sua própria logo, empresa e contatos**, além de PDF detalhado interno, HTML e CSV.
 - Instalação por usuário, atalho na área de trabalho e versão portátil com runtime incluído.
 
@@ -21,7 +26,7 @@ Requer Windows 10/11 de 64 bits. Baixe o `.msi` na página de versões e execute
 
 O pacote completo já inclui o motor e suas bibliotecas: **não é necessário instalar o Bambu Studio**. Na versão portátil, extraia o ZIP inteiro e mantenha a pasta `Engine` junto do executável. Para `.3mf` já fatiado ou `.gcode` com peso e tempo reconhecíveis, o programa lê os dados salvos.
 
-Esta versão recebe **3MF já configurado**; a edição de orientação, suportes, cores e parâmetros continua sendo feita em um fatiador compatível. Não é um produto oficial da Bambu Lab. [Motor, fontes e licenças](docs/MOTOR.md).
+Esta versão recebe **3MF já configurado** e permite ajustar os parâmetros acima. Orientação, disposição, pintura e edição manual de suportes continuam em um fatiador compatível. As cores na tela são ilustrativas por objeto; malhas grandes podem ser simplificadas na visualização, sem alterar o arquivo fatiado. Não é um produto oficial da Bambu Lab. [Motor, fontes e licenças](docs/MOTOR.md).
 
 ## Personalizar o PDF da sua empresa
 
@@ -43,7 +48,7 @@ Preço direto = custo de impressão × (1 + lucro %) + mão de obra
 Preço com Shopee = (preço direto + taxa fixa) ÷ (1 − percentual)
 ```
 
-Os padrões iniciais são R$ 100/kg de filamento, 100% de lucro sobre os custos de impressão e R$ 20 de mão de obra adicionados ao final. Energia e desgaste da máquina começam com estimativas ajustáveis. Revise os parâmetros para seu equipamento e sua região. A taxa da Shopee começa desativada e deve ser ajustada às condições aplicáveis à venda.
+Os padrões iniciais são R$ 100/kg de filamento, 100% de lucro sobre os custos de impressão e R$ 20 de mão de obra pelo projeto inteiro, adicionados ao final. Orçamentos anteriores à versão 1.4 mantêm a cobrança por unidade para preservar seus preços; a modalidade pode ser alterada em Custos e padrões. Energia e desgaste da máquina começam com estimativas ajustáveis. Revise os parâmetros para seu equipamento e sua região. A taxa da Shopee começa desativada e deve ser ajustada às condições aplicáveis à venda.
 
 **Unidades já contidas no arquivo** divide o consumo entre unidades que realmente estão naquele projeto. **Quantidade do pedido** multiplica o preço, sem simular um novo lote. Para estimar a economia de um lote, importe o lote configurado no fatiador.
 
@@ -69,7 +74,7 @@ Para gerar a distribuição:
 O script usa WiX 4 para extrair o runtime e gerar o MSI. Ele baixa os pacotes oficiais verificados por SHA-256, monta o motor, gera a pasta portátil, o ZIP e o instalador em `artifacts`. O arquivo correspondente de fontes do motor também é colocado em `artifacts` e deve ser disponibilizado junto dos downloads:
 
 ```powershell
-./artifacts/FG-Precificador-3D-1.3.0-portatil/FG.Precificador.exe --self-test-engine tests/fixtures/cubo-a1.3mf artifacts/motor.json
+./artifacts/FG-Precificador-3D-1.4.0-portatil/FG.Precificador.exe --self-test-engine tests/fixtures/cubo-a1.3mf artifacts/motor.json
 ```
 
 ## Dados e limites
