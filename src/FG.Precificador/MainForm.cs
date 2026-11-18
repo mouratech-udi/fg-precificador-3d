@@ -98,10 +98,12 @@ public sealed partial class MainForm : Form
         export.Click+=(_,_)=>Export();backup.Click+=(_,_)=>Backup();
         var split=new SplitContainer {Size=new Size(1320,650),Dock=DockStyle.Fill,FixedPanel=FixedPanel.Panel1,SplitterWidth=10,BackColor=Canvas,SplitterDistance=340,Panel1MinSize=310,Panel2MinSize=780};
         split.Panel1.BackColor=Color.White;split.Panel1.Padding=new Padding(12);
-        split.Panel1.Controls.Add(catalog);split.Panel1.Controls.Add(new Label {Text="SEUS ORÇAMENTOS",Dock=DockStyle.Top,Height=35,Font=new Font("Segoe UI Semibold",10),Padding=new Padding(4,6,0,0)});
-        BuildCatalogTools(split.Panel1);
+        var sidebar=new TableLayoutPanel{Dock=DockStyle.Fill,ColumnCount=1,RowCount=4,Margin=Padding.Empty,Padding=Padding.Empty,
+            RowStyles={new RowStyle(SizeType.Absolute,35),new RowStyle(SizeType.Absolute,168),new RowStyle(SizeType.Percent,100),new RowStyle(SizeType.Absolute,142)}};
+        sidebar.Controls.Add(new Label {Text="SEUS ORÇAMENTOS",Dock=DockStyle.Fill,Font=new Font("Segoe UI Semibold",10),Padding=new Padding(4,6,0,0)},0,0);
+        sidebar.Controls.Add(BuildCatalogTools(),0,1);catalog.Margin=Padding.Empty;sidebar.Controls.Add(catalog,0,2);
         var actions=new FlowLayoutPanel{Dock=DockStyle.Bottom,Height=142,Padding=new Padding(0,8,0,0),WrapContents=true};
-        actions.Controls.AddRange([openProjectButton,moveGroupButton,editButton,deleteButton,undoButton]);split.Panel1.Controls.Add(actions);
+        actions.Dock=DockStyle.Fill;actions.Margin=Padding.Empty;actions.Controls.AddRange([openProjectButton,moveGroupButton,editButton,deleteButton,undoButton]);sidebar.Controls.Add(actions,0,3);split.Panel1.Controls.Add(sidebar);
         var right=new TableLayoutPanel {Dock=DockStyle.Fill,RowCount=2,ColumnCount=1,Padding=new Padding(6,0,18,10),RowStyles={new RowStyle(SizeType.Absolute,120),new RowStyle(SizeType.Percent,100)}};
         var header=new TableLayoutPanel {Dock=DockStyle.Fill,ColumnCount=2,ColumnStyles={new ColumnStyle(SizeType.Absolute,128),new ColumnStyle(SizeType.Percent,100)},Margin=new Padding(0,0,0,12)};
         header.Controls.Add(picture,0,0);

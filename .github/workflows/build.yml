@@ -27,6 +27,11 @@ jobs:
           if ($LASTEXITCODE -ne 0) { Get-Content artifacts/autoteste.json; throw 'Falha no autoteste.' }
           $result = Get-Content artifacts/autoteste.json -Raw | ConvertFrom-Json
           if (-not $result.success) { throw 'Autoteste reprovado.' }
+      - name: Verificar importação e lista visível
+        shell: pwsh
+        run: |
+          dotnet src/FG.Precificador/bin/Release/net10.0-windows/win-x64/FG.Precificador.dll --self-test-catalog artifacts/catalogo.json
+          if ($LASTEXITCODE -ne 0) { Get-Content artifacts/catalogo.json; throw 'Importação ou layout do catálogo reprovado.' }
       - name: Salvar resultado
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7

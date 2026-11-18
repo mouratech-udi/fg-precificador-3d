@@ -42,5 +42,6 @@ public static class FeatureTests
         a.Plates=[new(){Index=1,Grams=20,Seconds=600}];b.Plates=[new(){Index=1,Grams=30,Seconds=900}];using var form=new MainForm(store,data);check(form.Text.Contains("FG Precificador 3D"),"Interface inicia com histórico, grupos e orçamento calculável");
         using(var control=new MeshViewer{Size=new Size(900,600)})using(var image=new Bitmap(900,600)){control.SetMesh(mesh);control.DrawToBitmap(image,new Rectangle(Point.Empty,control.Size));image.Save(Path.Combine(folder,"malha.png"));}
         var changedQuote=new Quote{Source=cube,Sha256=new string('0',64)};blocked=false;try{Project3D.VerifySource(changedQuote).GetAwaiter().GetResult();}catch(InvalidDataException){blocked=true;}check(blocked,"Arquivo alterado não é apresentado como o modelo do orçamento anterior");
+        MainForm.TestCatalogRefresh(check,folder);
     }
 }

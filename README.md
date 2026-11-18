@@ -63,7 +63,7 @@ New-Item -ItemType Directory -Path artifacts -Force
 dotnet src/FG.Precificador/bin/Release/net10.0-windows/win-x64/FG.Precificador.dll --self-test artifacts/autoteste.json
 ```
 
-O autoteste usa apenas exemplos fictícios. Exercita preços, taxas, múltiplas mesas, preservação de originais, diferenças entre versões do Bambu Studio, PDFs, empresa personalizada, histórico e recuperação de exclusões. O GitHub Actions também prepara o motor em um Windows sem o Bambu instalado e fatia o cubo sintético de referência.
+O autoteste usa apenas exemplos fictícios. A verificação do catálogo importa um projeto sintético e confere que os filtros não cobrem a lista em três tamanhos de janela. Exercita preços, taxas, múltiplas mesas, preservação de originais, diferenças entre versões do Bambu Studio, PDFs, empresa personalizada, histórico e recuperação de exclusões. O GitHub Actions também prepara o motor em um Windows sem o Bambu instalado e fatia o cubo sintético de referência.
 
 Para gerar a distribuição:
 
@@ -74,7 +74,7 @@ Para gerar a distribuição:
 O script usa WiX 4 para extrair o runtime e gerar o MSI. Ele baixa os pacotes oficiais verificados por SHA-256, monta o motor, gera a pasta portátil, o ZIP e o instalador em `artifacts`. O arquivo correspondente de fontes do motor também é colocado em `artifacts` e deve ser disponibilizado junto dos downloads:
 
 ```powershell
-./artifacts/FG-Precificador-3D-1.4.0-portatil/FG.Precificador.exe --self-test-engine tests/fixtures/cubo-a1.3mf artifacts/motor.json
+./artifacts/FG-Precificador-3D-1.4.1-portatil/FG.Precificador.exe --self-test-engine tests/fixtures/cubo-a1.3mf artifacts/motor.json
 ```
 
 ## Dados e limites

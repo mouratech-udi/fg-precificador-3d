@@ -16,17 +16,17 @@ public sealed partial class MainForm
     CancellationTokenSource? meshCancel;Guid? meshQuote;bool filterLoading,checkingUpdates;
     sealed record GroupChoice(Guid? Id,string Text,bool Ungrouped=false){public override string ToString()=>Text;}
     sealed record PlateChoice(int? Id,string Text){public override string ToString()=>Text;}
-    void BuildCatalogTools(Panel parent)
+    Control BuildCatalogTools()
     {
-        var tools=new TableLayoutPanel{Dock=DockStyle.Top,Height=168,ColumnCount=1,RowCount=4,Padding=new Padding(0,4,0,4)};
+        var tools=new TableLayoutPanel{Dock=DockStyle.Fill,Height=168,ColumnCount=1,RowCount=4,Padding=new Padding(0,4,0,4),Margin=Padding.Empty};
         tools.RowStyles.Add(new RowStyle(SizeType.Absolute,35));tools.RowStyles.Add(new RowStyle(SizeType.Absolute,35));tools.RowStyles.Add(new RowStyle(SizeType.Absolute,51));tools.RowStyles.Add(new RowStyle(SizeType.Absolute,37));
         tools.Controls.Add(searchBox);tools.Controls.Add(groupFilter);
         var buttons=new FlowLayoutPanel{Dock=DockStyle.Fill,WrapContents=false};var create=Button("Novo grupo");var child=Button("Subgrupo");buttons.Controls.AddRange([create,child]);tools.Controls.Add(buttons);
         tools.Controls.Add(new Label{Text="Ctrl / Shift: selecionar vários orçamentos",Dock=DockStyle.Fill,ForeColor=Muted,Font=new Font("Segoe UI",9)});
-        parent.Controls.Add(tools);tools.BringToFront();
         searchBox.TextChanged+=(_,_)=>RefreshCatalog();groupFilter.SelectedIndexChanged+=(_,_)=>{if(!filterLoading)RefreshCatalog();};
         create.Click+=(_,_)=>NewGroup(false);child.Click+=(_,_)=>NewGroup(true);
         openProjectButton.Click+=(_,_)=>OpenProject();moveGroupButton.Click+=(_,_)=>MoveToGroup();
+        return tools;
     }
     void RefreshGroups(Guid? select=null)
     {
@@ -39,7 +39,7 @@ public sealed partial class MainForm
         if(filterLoading)return;var previous=selected??Current?.Id;var group=groupFilter.SelectedItem as GroupChoice;
         catalog.BeginUpdate();try{catalog.Items.Clear();foreach(var q in CatalogGroups.Filter(data,searchBox.Text,group?.Id,group?.Ungrouped??false))catalog.Items.Add(q);
             var index=catalog.Items.Cast<Quote>().ToList().FindIndex(q=>q.Id==previous);if(catalog.Items.Count>0)catalog.SelectedIndex=index>=0?index:0;else LoadCurrent();}
-        finally{catalog.EndUpdate();}UpdateActions();
+        finally{catalog.EndUpdate();}if(catalog.SelectedIndex>=0)catalog.TopIndex=catalog.SelectedIndex;UpdateActions();
     }
     static string? AskName(IWin32Window owner,string caption)
     {

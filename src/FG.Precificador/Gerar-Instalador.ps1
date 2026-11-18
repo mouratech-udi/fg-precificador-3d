@@ -2,7 +2,7 @@ param(
     [Parameter(Mandatory)][string]$Publicacao,
     [Parameter(Mandatory)][string]$Saida,
     [string]$Wix='wix',
-    [string]$Versao='1.4.0'
+    [string]$Versao='1.4.1'
 )
 $ErrorActionPreference='Stop'
 $taskPublish=(Resolve-Path -LiteralPath $Publicacao).Path

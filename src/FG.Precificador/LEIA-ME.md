@@ -1,4 +1,6 @@
-# FG Precificador 3D — 1.4.0
+# FG Precificador 3D — 1.4.1
+
+Correção 1.4.1: pesquisa, grupos, lista e botões têm áreas separadas. Projetos recém-importados ficam visíveis no início da lista, sem serem cobertos pelos filtros. O histórico não precisa ser reimportado.
 
 Novidade 1.4.0: visualização 3D, ajustes com refatiamento em cópia, placas com custos, mão de obra por projeto ou placa, pesquisa e grupos/subgrupos, abertura de projeto e aviso opcional de atualizações.
 
@@ -16,7 +18,7 @@ O cabeçalho tem a identidade da FG e o Instagram **@fgdesigneprint**. A identid
 
 ## Instalar ou usar sem instalar
 
-- Instalador: abra `FG-Precificador-3D-1.4.0-x64.msi`. A instalação é por usuário; os atalhos aparecem no menu Iniciar e na área de trabalho como **FG Precificador 3D**.
+- Instalador: abra `FG-Precificador-3D-1.4.1-x64.msi`. A instalação é por usuário; os atalhos aparecem no menu Iniciar e na área de trabalho como **FG Precificador 3D**.
 - Portátil: extraia o ZIP inteiro e abra `FG.Precificador.exe`.
 - O programa inclui o runtime e o motor de fatiamento necessários. O Bambu Studio não precisa estar instalado. Extraia sempre o ZIP completo.
 - Instalador e programa não possuem assinatura de editor Authenticode nesta primeira versão.
